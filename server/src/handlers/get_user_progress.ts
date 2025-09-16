@@ -1,9 +1,34 @@
+import { db } from '../db';
+import { userProgressTable } from '../db/schema';
 import { type GetUserProgressInput, type UserProgress } from '../schema';
+import { eq, and, type SQL } from 'drizzle-orm';
 
 export async function getUserProgress(input: GetUserProgressInput): Promise<UserProgress[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching progress data for a specific user.
-    // If content_id is provided, returns progress for that specific content,
-    // otherwise returns all progress for the user. This supports progress tracking features.
-    return Promise.resolve([]);
+  try {
+    // Build conditions array
+    const conditions: SQL<unknown>[] = [];
+    
+    // Always filter by user_id
+    conditions.push(eq(userProgressTable.user_id, input.user_id));
+
+    // Optionally filter by content_id
+    if (input.content_id !== undefined) {
+      conditions.push(eq(userProgressTable.content_id, input.content_id));
+    }
+
+    // Build query with where clause
+    const results = await db.select()
+      .from(userProgressTable)
+      .where(conditions.length === 1 ? conditions[0] : and(...conditions))
+      .execute();
+
+    // Convert numeric fields back to numbers
+    return results.map(progress => ({
+      ...progress,
+      completion_percentage: parseFloat(progress.completion_percentage.toString())
+    }));
+  } catch (error) {
+    console.error('Get user progress failed:', error);
+    throw error;
+  }
 }

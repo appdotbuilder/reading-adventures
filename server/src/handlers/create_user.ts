@@ -1,15 +1,24 @@
+import { db } from '../db';
+import { usersTable } from '../db/schema';
 import { type CreateUserInput, type User } from '../schema';
 
-export async function createUser(input: CreateUserInput): Promise<User> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new user (child) account for the reading app.
-    // It should validate the user data and persist it in the database.
-    return Promise.resolve({
-        id: 1, // Placeholder ID
+export const createUser = async (input: CreateUserInput): Promise<User> => {
+  try {
+    // Insert user record
+    const result = await db.insert(usersTable)
+      .values({
         name: input.name,
         age: input.age,
-        level: input.level || 'beginner',
-        created_at: new Date(),
-        updated_at: new Date()
-    } as User);
-}
+        level: input.level // Zod has already applied the default 'beginner' if not provided
+      })
+      .returning()
+      .execute();
+
+    // Return the created user
+    const user = result[0];
+    return user;
+  } catch (error) {
+    console.error('User creation failed:', error);
+    throw error;
+  }
+};

@@ -1,11 +1,12 @@
+import { db } from '../db';
+import { contentTable } from '../db/schema';
 import { type CreateContentInput, type Content } from '../schema';
 
-export async function createContent(input: CreateContentInput): Promise<Content> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating new learning content (words, sentences, stories, poems)
-    // for the curriculum. Teachers can use this to add new reading materials.
-    return Promise.resolve({
-        id: 1, // Placeholder ID
+export const createContent = async (input: CreateContentInput): Promise<Content> => {
+  try {
+    // Insert content record
+    const result = await db.insert(contentTable)
+      .values({
         title: input.title,
         type: input.type,
         difficulty: input.difficulty,
@@ -13,7 +14,14 @@ export async function createContent(input: CreateContentInput): Promise<Content>
         audio_url: input.audio_url || null,
         order_index: input.order_index,
         phonics_focus: input.phonics_focus || null,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as Content);
-}
+      })
+      .returning()
+      .execute();
+
+    // Return the created content
+    return result[0];
+  } catch (error) {
+    console.error('Content creation failed:', error);
+    throw error;
+  }
+};
